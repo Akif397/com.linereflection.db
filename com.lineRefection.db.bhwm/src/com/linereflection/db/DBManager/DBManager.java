@@ -79,7 +79,7 @@ public class DBManager {
                 postDbModel.setTags(postDbModels.getTags());
                 
                 System.out.println(postDbModel.getUrl());
-                System.out.println(postDbModels.getUrl());
+                
                 
             }
         try {
