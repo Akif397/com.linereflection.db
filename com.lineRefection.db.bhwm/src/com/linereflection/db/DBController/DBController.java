@@ -6,7 +6,7 @@
 package com.linereflection.db.DBController;
 
 import com.lineReflection.db.DBManager.DBManager;
-import com.lineReflection.db.DBModel.PostDbModel;
+import com.lineReflection.db.DBModel.PostDBModel;
 import com.lineReflection.db.DBModel.UserDBModel;
 import java.util.List;
 import java.util.logging.Level;
@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * @author PC3
  */
 public class DBController {
-    DBManager dbManager = DBManager.getInstance();
+    DBManager dbManager = DBManager.getDBManager();
     
     
 
@@ -31,8 +31,8 @@ public class DBController {
         }
     }
     public void getPost(){
-        List<PostDbModel> pList = dbManager.getPostDB();
-        for(PostDbModel postDbModel : pList){
+        List<PostDBModel> pList = dbManager.getPostDB();
+        for(PostDBModel postDbModel : pList){
             System.out.println(postDbModel.getId());
             System.out.println(postDbModel.getUrl());
             System.out.println(postDbModel.getTitle());
@@ -46,7 +46,7 @@ public class DBController {
         }
     }
     public void updatePost(List list){
-        List<PostDbModel> updateList = list;
+        List<PostDBModel> updateList = list;
         try {
             dbManager.updatePostDB(updateList);
         } catch (ClassNotFoundException ex) {

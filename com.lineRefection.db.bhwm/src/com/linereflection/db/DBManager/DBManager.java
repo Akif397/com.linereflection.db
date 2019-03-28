@@ -1,9 +1,9 @@
 package com.lineReflection.db.DBManager;
 
-import com.lineReflection.db.DBModel.PostDbModel;
+import com.lineReflection.db.DBModel.PostDBModel;
 import com.lineReflection.db.DBModel.UserDBModel;
-import com.linereflection.db.DBManager.DBConnection;
-import java.sql.Connection;
+import com.mysql.jdbc.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,38 +11,141 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class DBManager {
 
-    UserDBModel userDBModel ;
-    
-    private static DBManager INSTANCE = null;
-    
-    private DBConnection dBConnection = new DBConnection();
-    private Connection connection = dBConnection.getConnection();
-    
-    public static DBManager getInstance(){
-        if(INSTANCE == null){
-            INSTANCE = new DBManager();
-           
-        }
-        return INSTANCE;
-    }
-    
+    private static final Log LOGGER = LogFactory.getLog(DBManager.class);
+    private static com.mysql.jdbc.Connection connection = null;
 
-    public  void insertUserDB(List list) {
+    private UserDBModel userDBModel = new UserDBModel();
+    private PostDBModel postDbModel = new PostDBModel();
+
+    private static DBManager dbManager = null;
+
+    private DBConnection dBConnection = new DBConnection();
+//    private Connection connection = dBConnection.getConnection();
+
+    public static enum TABLE {
+
+        TABLE_BHW_USER("bhwUser"),
+        TABLE_BHW_POST("posttable");
+
+        private String tableName = "";
+
+        TABLE(String tableName) {
+            this.tableName = tableName;
+        }
+
+        public String toValue() {
+            return this.tableName;
+        }
+
+        public String toString() {
+            return String.valueOf(this.tableName);
+        }
+    }
+
+    private DBManager() {
+
+    }
+
+    public static DBManager getDBManager() {
+        if (dbManager == null) {
+            dbManager = new DBManager();
+        }
+        return dbManager;
+    }
+
+    public void closeConnection() throws SQLException {
+        getConDBConnection().close();
+    }
+
+    public void resetConnection() throws SQLException {
+        this.closeConnection();
+        connection = null;
+    }
+
+    public Connection getConDBConnection() throws SQLException {
+
+        if (connection != null) {
+            return connection;
+        }
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            LOGGER.fatal(e.getMessage());
+        }
+
+        String PUBLIC_DNS = "nexcommdb.cfjr04dcs1uw.us-east-1.rds.amazonaws.com";
+//        String DATABASE = "tinder_testing";
+        String DATABASE = "BHW";
+        String REMOTE_DATABASE_USERNAME = "nexcommdbuser";
+        String DATABASE_USER_PASSWORD = "N3xK0MdB2Ol8POOP";
+        String PORT = "3306";
+
+        try {
+            connection = (com.mysql.jdbc.Connection) DriverManager.
+                    getConnection("jdbc:mysql://" + PUBLIC_DNS + ":" + PORT + "/" + DATABASE, REMOTE_DATABASE_USERNAME, DATABASE_USER_PASSWORD);
+        } catch (SQLException ex) {
+            throw ex;
+        }
+        return connection;
+    }
+
+    public UserDBModel getLoggedInUser() {
+        return userDBModel;
+    }
+
+    public PostDBModel getPostDetails() {
+        return postDbModel;
+    }
+
+    public boolean checkForUserWhileLogin(String email, String password) {
+        boolean checkForUser = false;
+        ResultSet rs = null;
+        PreparedStatement ps = null;
+        try {
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_USER + " where email = ?");
+            ps.setString(1, email);
+            rs = ps.executeQuery();
+            
+            if (rs.equals("null")) {
+                checkForUser = false;
+                return checkForUser;
+            } else {
+                while (rs.next()) {
+                    userDBModel.setEmail(rs.getString(2));
+                    if (rs.getString(3).equals(password)) {
+                        userDBModel.setPassword(rs.getString(3));
+                        checkForUser = true;
+                        return checkForUser;
+                    } else {
+                        checkForUser = false;
+                        return checkForUser;
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return checkForUser;
+    }
+
+    public void insertUserDB(List list) {
         userDBModel = new UserDBModel();
         List<UserDBModel> userDBModelList = list;
         PreparedStatement preparedStatement = null;
-        for(UserDBModel udbm : userDBModelList){
+        for (UserDBModel udbm : userDBModelList) {
             userDBModel.setId(udbm.getId());
             userDBModel.setEmail(udbm.getEmail());
             userDBModel.setPassword(udbm.getPassword());
         }
-        
+
         try {
-            
+
             preparedStatement = this.connection.prepareStatement("INSERT INTO `usertableinformation`( `id`, `email`, `password`) VALUES ( ? , ? , ?);");
             preparedStatement.setInt(1, userDBModel.getId());
             preparedStatement.setString(2, userDBModel.getEmail());
@@ -50,8 +153,8 @@ public class DBManager {
             preparedStatement.executeUpdate();
         } catch (SQLException ex) {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
-        }finally{
-            if(preparedStatement != null){
+        } finally {
+            if (preparedStatement != null) {
                 try {
                     preparedStatement.close();
                 } catch (SQLException ex) {
@@ -59,29 +162,28 @@ public class DBManager {
                 }
             }
         }
-        
+
     }
-    
+
     public void insertPostDB(List list) throws ClassNotFoundException {
-        List<PostDbModel> postDbModelList = list;
-        PostDbModel postDbModel = new PostDbModel();
-        for(PostDbModel postDbModels: postDbModelList){
-                
-                postDbModel.setId(postDbModels.getId());
-                postDbModel.setUrl(postDbModels.getUrl());
-                postDbModel.setTitle(postDbModels.getTitle());
-                postDbModel.setLikes(postDbModels.getLikes());
-                postDbModel.setReplies(postDbModels.getReplies());
-                postDbModel.setViews(postDbModels.getViews());
-                postDbModel.setDiscussion(postDbModels.getDiscussion());
-                postDbModel.setDescription(postDbModels.getDescription());
-                postDbModel.setUserId(postDbModels.getUserId());
-                postDbModel.setTags(postDbModels.getTags());
-                
-                System.out.println(postDbModel.getUrl());
-                
-                
-            }
+        List<PostDBModel> postDbModelList = list;
+        PostDBModel postDbModel = new PostDBModel();
+        for (PostDBModel postDbModels : postDbModelList) {
+
+            postDbModel.setId(postDbModels.getId());
+            postDbModel.setUrl(postDbModels.getUrl());
+            postDbModel.setTitle(postDbModels.getTitle());
+            postDbModel.setLikes(postDbModels.getLikes());
+            postDbModel.setReplies(postDbModels.getReplies());
+            postDbModel.setViews(postDbModels.getViews());
+            postDbModel.setDiscussion(postDbModels.getDiscussion());
+            postDbModel.setDescription(postDbModels.getDescription());
+            postDbModel.setUserId(postDbModels.getUserId());
+            postDbModel.setTags(postDbModels.getTags());
+
+            System.out.println(postDbModel.getUrl());
+
+        }
         try {
             PreparedStatement preparedStatement;
             preparedStatement = this.connection.prepareStatement("INSERT INTO `posttable`(`id`, `url`, `title`, `likes`, `replies`, `views`, `discussion`, `description`, `userid` , `tags` ) VALUES (? , ? , ? , ? , ? , ? , ? , ? , ? , ? );");
@@ -96,24 +198,24 @@ public class DBManager {
             preparedStatement.setInt(9, postDbModel.getUserId());
             preparedStatement.setString(10, postDbModel.getTags());
             preparedStatement.executeUpdate();
-            
+
         } catch (SQLException ex) {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     public void updatePostDB(List list) throws ClassNotFoundException {
-        List<PostDbModel> postDbModelList = list;
-            PostDbModel postDbModel = new PostDbModel();
-            PreparedStatement preparedStatement;
-            PreparedStatement updatePreparedStatement;
-            ResultSet resultSet = null;
+        List<PostDBModel> postDbModelList = list;
+        PostDBModel postDbModel = new PostDBModel();
+        PreparedStatement preparedStatement;
+        PreparedStatement updatePreparedStatement;
+        ResultSet resultSet = null;
         try {
-            
-            for(PostDbModel postDbModels: postDbModelList){
-                
+
+            for (PostDBModel postDbModels : postDbModelList) {
+
                 System.out.println(postDbModel.getUrl());
-                
+
                 postDbModel.setId(postDbModels.getId());
                 postDbModel.setUrl(postDbModels.getUrl());
                 postDbModel.setTitle(postDbModels.getTitle());
@@ -124,16 +226,16 @@ public class DBManager {
                 postDbModel.setDescription(postDbModels.getDescription());
                 postDbModel.setUserId(postDbModels.getUserId());
                 postDbModel.setTags(postDbModels.getTags());
-                
+
                 System.out.println(postDbModel.getUrl());
                 System.out.println(postDbModels.getUrl());
-                
+
             }
-            
+
             preparedStatement = this.connection.prepareStatement("SELECT * FROM `posttable` WHERE `url`= ? ");
             preparedStatement.setString(1, postDbModel.getUrl());
             resultSet = preparedStatement.executeQuery();
-            if (!resultSet.first()){
+            if (!resultSet.first()) {
 //                while(resultSet.next()){
 //                    postDbModel.setId(resultSet.getInt(1));
 //                    System.out.println(resultSet.getString(3));
@@ -141,7 +243,7 @@ public class DBManager {
 //                    String s = resultSet.getString(2);
 //                }
                 insertPostDB(postDbModelList);
-            }else{
+            } else {
                 updatePreparedStatement = this.connection.prepareStatement("UPDATE `posttable` SET `url`= ? ,`title`= ? ,`likes`= ? ,`replies`= ? ,`views`= ? ,`discussion`= ? ,`description`= ? , `tags` = ? WHERE `url` = ? ;");
                 updatePreparedStatement.setString(1, postDbModel.getUrl());
                 updatePreparedStatement.setString(2, postDbModel.getTitle());
@@ -158,39 +260,39 @@ public class DBManager {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    public List<UserDBModel> getUserDB(){
+
+    public List<UserDBModel> getUserDB() {
         List<UserDBModel> list = new LinkedList<>();
-        
+
         try {
             PreparedStatement preparedStatement;
             preparedStatement = this.connection.prepareStatement("SELECT * FROM `usertableinformation`");
-            
+
             ResultSet resultSet = preparedStatement.executeQuery();
-            while(resultSet.next()){
+            while (resultSet.next()) {
                 userDBModel = new UserDBModel();
                 userDBModel.setId(resultSet.getInt(1));
                 userDBModel.setEmail(resultSet.getString(2));
                 userDBModel.setPassword(resultSet.getString(3));
                 list.add(userDBModel);
             }
-            
-            
+
         } catch (SQLException ex) {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
         }
         return list;
     }
-    public List<PostDbModel> getPostDB(){
-        List<PostDbModel> list = new LinkedList<>();
-        
+
+    public List<PostDBModel> getPostDB() {
+        List<PostDBModel> list = new LinkedList<>();
+
         try {
             PreparedStatement preparedStatement;
             preparedStatement = this.connection.prepareStatement("SELECT * FROM `posttable`");
-            
+
             ResultSet resultSet = preparedStatement.executeQuery();
-            while(resultSet.next()){
-                PostDbModel postDbModel = new PostDbModel();
+            while (resultSet.next()) {
+                PostDBModel postDbModel = new PostDBModel();
                 postDbModel.setId(resultSet.getInt(1));
                 postDbModel.setUrl(resultSet.getString(2));
                 postDbModel.setTitle(resultSet.getString(3));
@@ -203,8 +305,7 @@ public class DBManager {
                 postDbModel.setTags(resultSet.getString(10));
                 list.add(postDbModel);
             }
-            
-            
+
         } catch (SQLException ex) {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
         }
