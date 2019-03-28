@@ -2,7 +2,8 @@ package com.lineReflection.db.DBManager;
 
 import com.lineReflection.db.DBModel.PostDBModel;
 import com.lineReflection.db.DBModel.UserDBModel;
-import com.mysql.jdbc.Connection;
+import java.sql.Connection;
+//import com.mysql.jdbc.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,14 +18,14 @@ import org.apache.commons.logging.LogFactory;
 public class DBManager {
 
     private static final Log LOGGER = LogFactory.getLog(DBManager.class);
-    private static com.mysql.jdbc.Connection connection = null;
+    private static Connection connection = null;
 
     private UserDBModel userDBModel = new UserDBModel();
     private PostDBModel postDbModel = new PostDBModel();
 
     private static DBManager dbManager = null;
 
-    private DBConnection dBConnection = new DBConnection();
+//    private DBConnection dBConnection = new DBConnection();
 //    private Connection connection = dBConnection.getConnection();
 
     public static enum TABLE {
@@ -35,7 +36,7 @@ public class DBManager {
         private String tableName = "";
 
         TABLE(String tableName) {
-            this.tableName = tableName;
+            this.tableName = tableName;  
         }
 
         public String toValue() {
@@ -70,13 +71,13 @@ public class DBManager {
     public Connection getConDBConnection() throws SQLException {
 
         if (connection != null) {
-            return connection;
+            return connection; 
         }
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            LOGGER.fatal(e.getMessage());
-        }
+//        try {
+//            Class.forName("com.mysql.jdbc.Driver");
+//        } catch (ClassNotFoundException e) {
+//            LOGGER.fatal(e.getMessage());
+//        }
 
         String PUBLIC_DNS = "nexcommdb.cfjr04dcs1uw.us-east-1.rds.amazonaws.com";
 //        String DATABASE = "tinder_testing";
@@ -86,7 +87,7 @@ public class DBManager {
         String PORT = "3306";
 
         try {
-            connection = (com.mysql.jdbc.Connection) DriverManager.
+            connection = (Connection) DriverManager.
                     getConnection("jdbc:mysql://" + PUBLIC_DNS + ":" + PORT + "/" + DATABASE, REMOTE_DATABASE_USERNAME, DATABASE_USER_PASSWORD);
         } catch (SQLException ex) {
             throw ex;
@@ -95,10 +96,42 @@ public class DBManager {
     }
 
     public UserDBModel getLoggedInUser() {
-        return userDBModel;
+        return userDBModel ;
     }
 
-    public PostDBModel getPostDetails() {
+    public void setPostDetails(List list) {
+        List<PostDBModel> postDBModelList = list ;
+        for (PostDBModel postDbModels : postDBModelList) {
+
+                System.out.println(postDbModel.getUrl());
+
+                postDbModel.setId(postDbModels.getId());
+                postDbModel.setUrl(postDbModels.getUrl());
+                postDbModel.setTitle(postDbModels.getTitle());
+                postDbModel.setLikes(postDbModels.getLikes());
+                postDbModel.setReplies(postDbModels.getReplies());
+                postDbModel.setViews(postDbModels.getViews());
+                postDbModel.setDiscussion(postDbModels.getDiscussion());
+                postDbModel.setDescription(postDbModels.getDescription());
+                postDbModel.setUserId(postDbModels.getUserId());
+                postDbModel.setTags(postDbModels.getTags());
+
+                System.out.println(postDbModel.getUrl());
+                System.out.println(postDbModels.getUrl());
+
+            }
+    }
+    public void setLoggedInUser(List list){
+        List<UserDBModel> userDBModelList =list;
+        for (UserDBModel udbm : userDBModelList) {
+            userDBModel.setId(udbm.getId());
+            userDBModel.setEmail(udbm.getEmail());
+            userDBModel.setPassword(udbm.getPassword());
+        }
+
+    }
+    
+    public PostDBModel getPostDetails(){
         return postDbModel;
     }
 
@@ -135,21 +168,17 @@ public class DBManager {
     }
 
     public void insertUserDB(List list) {
-        userDBModel = new UserDBModel();
+        
         List<UserDBModel> userDBModelList = list;
+        setLoggedInUser(userDBModelList);
         PreparedStatement preparedStatement = null;
-        for (UserDBModel udbm : userDBModelList) {
-            userDBModel.setId(udbm.getId());
-            userDBModel.setEmail(udbm.getEmail());
-            userDBModel.setPassword(udbm.getPassword());
-        }
-
+        
         try {
 
-            preparedStatement = this.connection.prepareStatement("INSERT INTO `usertableinformation`( `id`, `email`, `password`) VALUES ( ? , ? , ?);");
-            preparedStatement.setInt(1, userDBModel.getId());
-            preparedStatement.setString(2, userDBModel.getEmail());
-            preparedStatement.setString(3, userDBModel.getPassword());
+            preparedStatement = DBManager.getDBManager().getConDBConnection().prepareStatement("Insert Into " + TABLE.TABLE_BHW_USER + "(  `email`, `password`) VALUES ( ? , ?);");
+            
+            preparedStatement.setString(1, getLoggedInUser().getEmail());
+            preparedStatement.setString(2, getLoggedInUser().getPassword());
             preparedStatement.executeUpdate();
         } catch (SQLException ex) {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
@@ -186,7 +215,7 @@ public class DBManager {
         }
         try {
             PreparedStatement preparedStatement;
-            preparedStatement = this.connection.prepareStatement("INSERT INTO `posttable`(`id`, `url`, `title`, `likes`, `replies`, `views`, `discussion`, `description`, `userid` , `tags` ) VALUES (? , ? , ? , ? , ? , ? , ? , ? , ? , ? );");
+            preparedStatement = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO `posttable`(`id`, `url`, `title`, `likes`, `replies`, `views`, `discussion`, `description`, `userid` , `tags` ) VALUES (? , ? , ? , ? , ? , ? , ? , ? , ? , ? );");
             preparedStatement.setInt(1, postDbModel.getId());
             preparedStatement.setString(2, postDbModel.getUrl());
             preparedStatement.setString(3, postDbModel.getTitle());
@@ -206,33 +235,16 @@ public class DBManager {
 
     public void updatePostDB(List list) throws ClassNotFoundException {
         List<PostDBModel> postDbModelList = list;
-        PostDBModel postDbModel = new PostDBModel();
+        setPostDetails(postDbModelList);
+//        PostDBModel postDbModel = new PostDBModel();
         PreparedStatement preparedStatement;
         PreparedStatement updatePreparedStatement;
         ResultSet resultSet = null;
         try {
 
-            for (PostDBModel postDbModels : postDbModelList) {
+            
 
-                System.out.println(postDbModel.getUrl());
-
-                postDbModel.setId(postDbModels.getId());
-                postDbModel.setUrl(postDbModels.getUrl());
-                postDbModel.setTitle(postDbModels.getTitle());
-                postDbModel.setLikes(postDbModels.getLikes());
-                postDbModel.setReplies(postDbModels.getReplies());
-                postDbModel.setViews(postDbModels.getViews());
-                postDbModel.setDiscussion(postDbModels.getDiscussion());
-                postDbModel.setDescription(postDbModels.getDescription());
-                postDbModel.setUserId(postDbModels.getUserId());
-                postDbModel.setTags(postDbModels.getTags());
-
-                System.out.println(postDbModel.getUrl());
-                System.out.println(postDbModels.getUrl());
-
-            }
-
-            preparedStatement = this.connection.prepareStatement("SELECT * FROM `posttable` WHERE `url`= ? ");
+            preparedStatement = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM `posttable` WHERE `url`= ? ");
             preparedStatement.setString(1, postDbModel.getUrl());
             resultSet = preparedStatement.executeQuery();
             if (!resultSet.first()) {
@@ -244,16 +256,16 @@ public class DBManager {
 //                }
                 insertPostDB(postDbModelList);
             } else {
-                updatePreparedStatement = this.connection.prepareStatement("UPDATE `posttable` SET `url`= ? ,`title`= ? ,`likes`= ? ,`replies`= ? ,`views`= ? ,`discussion`= ? ,`description`= ? , `tags` = ? WHERE `url` = ? ;");
-                updatePreparedStatement.setString(1, postDbModel.getUrl());
-                updatePreparedStatement.setString(2, postDbModel.getTitle());
-                updatePreparedStatement.setString(3, postDbModel.getLikes());
-                updatePreparedStatement.setString(4, postDbModel.getReplies());
-                updatePreparedStatement.setString(5, postDbModel.getViews());
-                updatePreparedStatement.setString(6, postDbModel.getDiscussion());
-                updatePreparedStatement.setString(7, postDbModel.getDescription());
-                updatePreparedStatement.setString(8, postDbModel.getTags());
-                updatePreparedStatement.setString(9, postDbModel.getUrl());
+                updatePreparedStatement = DBManager.getDBManager().getConDBConnection().prepareStatement("UPDATE `posttable` SET `url`= ? ,`title`= ? ,`likes`= ? ,`replies`= ? ,`views`= ? ,`discussion`= ? ,`description`= ? , `tags` = ? WHERE `url` = ? ;");
+                updatePreparedStatement.setString(1, getPostDetails().getUrl());
+                updatePreparedStatement.setString(2, getPostDetails().getTitle());
+                updatePreparedStatement.setString(3, getPostDetails().getLikes());
+                updatePreparedStatement.setString(4, getPostDetails().getReplies());
+                updatePreparedStatement.setString(5, getPostDetails().getViews());
+                updatePreparedStatement.setString(6, getPostDetails().getDiscussion());
+                updatePreparedStatement.setString(7, getPostDetails().getDescription());
+                updatePreparedStatement.setString(8, getPostDetails().getTags());
+                updatePreparedStatement.setString(9, getPostDetails().getUrl());
                 updatePreparedStatement.executeUpdate();
             }
         } catch (SQLException ex) {
@@ -266,7 +278,7 @@ public class DBManager {
 
         try {
             PreparedStatement preparedStatement;
-            preparedStatement = this.connection.prepareStatement("SELECT * FROM `usertableinformation`");
+            preparedStatement = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM `usertableinformation`");
 
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
@@ -288,7 +300,7 @@ public class DBManager {
 
         try {
             PreparedStatement preparedStatement;
-            preparedStatement = this.connection.prepareStatement("SELECT * FROM `posttable`");
+            preparedStatement = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM `posttable`");
 
             ResultSet resultSet = preparedStatement.executeQuery();
             while (resultSet.next()) {
