@@ -9,7 +9,7 @@ package com.lineReflection.db.DBModel;
  *
  * @author PC3
  */
-public class Post {
+public class PostDetails {
     int id , userId;
     String url , title , likes , replies , views , discussion ,description , tags;
 
