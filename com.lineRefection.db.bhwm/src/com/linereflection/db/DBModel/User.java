@@ -9,7 +9,7 @@ package com.lineReflection.db.DBModel;
  *
  * @author PC3
  */
-public class UserDBModel {
+public class User {
     int Id ; 
     String email , password ;
 
