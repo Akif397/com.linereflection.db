@@ -26,6 +26,8 @@ public class DBManager {
 
     private static DBManager dbManager = null;
 
+    
+
 //    private DBConnection dBConnection = new DBConnection();
 //    private Connection connection = dBConnection.getConnection();
 
@@ -130,5 +132,48 @@ public class DBManager {
             e.printStackTrace();
         }
         return checkForUser;
+    }
+    
+       List<PostDetails> postDetailsList = new LinkedList<>();
+       
+    public  List<PostDetails>  search(String searchString) {
+        PreparedStatement ps = null;
+//        List<PostDetails> postDetailsList = new LinkedList<>();
+        
+        String search = searchString;
+        ResultSet resultSet = null;
+        try {
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST + " where author = ?");
+            ps.setString(1, search);
+            resultSet = ps.executeQuery();
+            while(resultSet.next()){
+                PostDetails postDetails = new PostDetails();
+               // postDetails.setId(resultSet.getInt(1));
+                postDetails.setUrl(resultSet.getString(2));
+                postDetails.setTitle(resultSet.getString(3));
+                postDetails.setLikes(resultSet.getInt(4));
+                postDetails.setReplies(resultSet.getInt(5));
+                postDetails.setViews(resultSet.getInt(6));
+                postDetails.setDiscussion(resultSet.getString(7));
+                postDetails.setTags(resultSet.getString(8));
+              //  postDetails.setAuthor(resultSet.getString(9));
+              //  postDetails.setPostdate(resultSet.getDate(10));
+             //   postDetails.setUserId(resultSet.getInt(11));
+                postDetailsList.add(postDetails);
+//                System.out.println(postDetails.getDiscussion());
+//                System.err.println(postDetails.getPostdate());
+                
+            }
+            getSearchDetails(postDetailsList);
+        } catch (SQLException ex) {
+            Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return postDetailsList;
+    }
+    public void getSearchDetails(List list){
+//        search(List list);
+    }
+    public List<PostDetails> displayTable(){
+        return postDetailsList;
     }
 }
