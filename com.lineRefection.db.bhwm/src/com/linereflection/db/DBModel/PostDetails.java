@@ -5,13 +5,33 @@
  */
 package com.lineReflection.db.DBModel;
 
+import java.util.Date;
+
 /**
  *
  * @author PC3
  */
 public class PostDetails {
-    int id , userId;
-    String url , title , likes , replies , views , discussion ,description , tags;
+    int id , userId, likes, replies, views;
+    String url , title , discussion ,description , tags, author;
+    Date postdate;
+    
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+    
+
+    public Date getPostdate() {
+        return postdate;
+    }
+
+    public void setPostdate(Date postdate) {
+        this.postdate = postdate;
+    }
 
     public String getTags() {
         return tags;
@@ -53,27 +73,27 @@ public class PostDetails {
         this.title = title;
     }
 
-    public String getLikes() {
+    public int getLikes() {
         return likes;
     }
 
-    public void setLikes(String likes) {
+    public void setLikes(int likes) {
         this.likes = likes;
     }
 
-    public String getReplies() {
+    public int getReplies() {
         return replies;
     }
 
-    public void setReplies(String replies) {
+    public void setReplies(int replies) {
         this.replies = replies;
     }
 
-    public String getViews() {
+    public int getViews() {
         return views;
     }
 
-    public void setViews(String views) {
+    public void setViews(int views) {
         this.views = views;
     }
 
