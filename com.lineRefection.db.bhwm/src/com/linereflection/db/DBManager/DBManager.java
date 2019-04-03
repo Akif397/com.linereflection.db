@@ -136,15 +136,16 @@ public class DBManager {
     
        List<PostDetails> postDetailsList = new LinkedList<>();
        
-    public  List<PostDetails>  search(String searchString) {
+    public  List<PostDetails>  search(String sString , String sTag) {
         PreparedStatement ps = null;
+        String searchTag = sTag;
 //        List<PostDetails> postDetailsList = new LinkedList<>();
         
-        String search = searchString;
+        String searchString = sString;
         ResultSet resultSet = null;
         try {
-            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST + " where author = ?");
-            ps.setString(1, search);
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST + " where " + searchTag +" = ?");
+            ps.setString(1, searchString);
             resultSet = ps.executeQuery();
             while(resultSet.next()){
                 PostDetails postDetails = new PostDetails();
@@ -161,6 +162,42 @@ public class DBManager {
              //   postDetails.setUserId(resultSet.getInt(11));
                 postDetailsList.add(postDetails);
 //                System.out.println(postDetails.getDiscussion());
+//                System.err.println(postDetails.getPostdate());
+                
+            }
+            getSearchDetails(postDetailsList);
+        } catch (SQLException ex) {
+            Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return postDetailsList;
+    }
+        public  List<PostDetails>  search(int sString , String sTag) {
+        PreparedStatement ps = null;
+        String searchTag = sTag;
+//        List<PostDetails> postDetailsList = new LinkedList<>();
+        
+        int searchString = sString;
+        ResultSet resultSet = null;
+        try {
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST + " where " + searchTag + " = ? ");
+          //  ps.setString(1, searchTag);
+            ps.setInt(1, searchString);
+            resultSet = ps.executeQuery();
+            while(resultSet.next()){
+                PostDetails postDetails = new PostDetails();
+               // postDetails.setId(resultSet.getInt(1));
+                postDetails.setUrl(resultSet.getString(2));
+                postDetails.setTitle(resultSet.getString(3));
+                postDetails.setLikes(resultSet.getInt(4));
+                postDetails.setReplies(resultSet.getInt(5));
+                postDetails.setViews(resultSet.getInt(6));
+                postDetails.setDiscussion(resultSet.getString(7));
+                postDetails.setTags(resultSet.getString(8));
+              //  postDetails.setAuthor(resultSet.getString(9));
+              //  postDetails.setPostdate(resultSet.getDate(10));
+             //   postDetails.setUserId(resultSet.getInt(11));
+                postDetailsList.add(postDetails);
+              // System.out.println(postDetails.getDiscussion());
 //                System.err.println(postDetails.getPostdate());
                 
             }
