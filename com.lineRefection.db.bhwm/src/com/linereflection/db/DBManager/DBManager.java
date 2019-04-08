@@ -343,6 +343,46 @@ public class DBManager {
         }
     }
 
+    public void populatePostTagTable(PostDetails postDetails) {
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            PreparedStatement ps, psForChecking, psForInsert = null;
+            ResultSet rs, rsForCheck = null;
+            String tag = postDetails.getTags();
+            
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
+                    + " where tags = ?");
+            ps.setString(1, tag);
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                int postID = rs.getInt(1);
+                String tagInPostTable = rs.getString(8);
+                psForChecking = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_TAG
+                        + " where tag = ? and postid = ?");
+                psForChecking.setString(1, tagInPostTable);
+                psForChecking.setInt(2, postID);
+
+                rsForCheck = psForChecking.executeQuery();
+                if (!rsForCheck.next()) {
+                    psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_TAG
+                            + " (tag, postid)  Values"
+                            + " (?, ?);");
+                    psForInsert.setString(1, tag);
+                    psForInsert.setInt(2, postID);
+                    psForInsert.execute();
+                } else {
+                    System.out.println("The Tag has already inserted");
+                }
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     List<PostDetails> postDetailsList = new LinkedList<>();
 
     public List<PostDetails> search(String sString, String sTag) {
