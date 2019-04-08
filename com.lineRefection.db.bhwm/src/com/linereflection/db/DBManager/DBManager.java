@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -30,7 +31,9 @@ public class DBManager {
     public static enum TABLE {
 
         TABLE_BHW_USER("bhwUser"),
-        TABLE_BHW_POST("posttable");
+        TABLE_BHW_POST("posttable"),
+        TABLE_BHW_AUTHOR("postauthortable"),
+        TABLE_BHW_DATE("postdatetable");
 
         private String tableName = "";
 
@@ -138,6 +141,123 @@ public class DBManager {
         }
 
         return checkForUser;
+    }
+
+    public void insertPostDetailsToDatabase(PostDetails postDetails) {
+
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            PreparedStatement ps, psForInsert = null;
+            ResultSet rs = null;
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
+                    + " where url = ?");
+            ps.setString(1, postDetails.getUrl());
+            rs = ps.executeQuery();
+
+            if (!rs.next()) {
+                psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_POST
+                        + " (url, title, likes, replies, views, discussion, tags, author, postdate, time, userEmail)  Values"
+                        + " (?,?,?,?,?,?,?,?,?,?,?);");
+                psForInsert.setString(1, postDetails.getUrl());
+                psForInsert.setString(2, postDetails.getTitle());
+                psForInsert.setInt(3, postDetails.getLikes());
+                psForInsert.setInt(4, postDetails.getReplies());
+                psForInsert.setInt(5, postDetails.getViews());
+                psForInsert.setString(6, postDetails.getDiscussion());
+                psForInsert.setString(7, postDetails.getTags());
+                psForInsert.setString(8, postDetails.getAuthor());
+                psForInsert.setDate(9, (java.sql.Date) postDetails.getPostdate());
+                psForInsert.setString(10, postDetails.getTime());
+                psForInsert.setString(11, postDetails.getUserEmail());
+                psForInsert.execute();
+            } else {
+                System.out.println("The row already inserted");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void populatePostAuthorTable(PostDetails postDetails) {
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            PreparedStatement ps, psForChecking, psForInsert = null;
+            ResultSet rs, rsForCheck = null;
+            String author = postDetails.getAuthor();
+            
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
+                    + " where author = ?");
+            ps.setString(1, author);
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                int postID = rs.getInt(1);
+                psForChecking = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_AUTHOR
+                        + " where author = ? and postid = ?");
+                psForChecking.setString(1, author);
+                psForChecking.setInt(2, postID);
+
+                rsForCheck = psForChecking.executeQuery();
+                if (!rsForCheck.next()) {
+                    psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_AUTHOR
+                            + " (author, postid)  Values"
+                            + " (?, ?);");
+                    psForInsert.setString(1, author);
+                    psForInsert.setInt(2, postID);
+                    psForInsert.execute();
+                } else {
+                    System.out.println("The author has already inserted");
+                }
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public void populatePostDateTable(PostDetails postDetails) {
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            PreparedStatement ps, psForChecking, psForInsert = null;
+            ResultSet rs, rsForCheck = null;
+            Date postDate = postDetails.getPostdate();
+            
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
+                    + " where postdate = ?");
+            ps.setDate(1, (java.sql.Date) postDate);
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                int postID = rs.getInt(1);
+                psForChecking = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_DATE
+                        + " where date = ? and postid = ?");
+                psForChecking.setDate(1, (java.sql.Date) postDate);
+                psForChecking.setInt(2, postID);
+
+                rsForCheck = psForChecking.executeQuery();
+                if (!rsForCheck.next()) {
+                    psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_DATE
+                            + " (date, postid)  Values"
+                            + " (?, ?);");
+                    psForInsert.setDate(1, (java.sql.Date) postDate);
+                    psForInsert.setInt(2, postID);
+                    psForInsert.execute();
+                } else {
+                    System.out.println("The author has already inserted");
+                }
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     List<PostDetails> postDetailsList = new LinkedList<>();

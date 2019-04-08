@@ -12,12 +12,29 @@ import java.util.Date;
  * @author PC3
  */
 public class PostDetails {
-    int id , userId, likes, replies, views;
-    String url , title , discussion ,description , tags, author;
+    int id , likes, replies, views;
+    String url , title , discussion ,description , tags, author, time, userEmail;
     Date postdate;
+    
+    public String getTime() {
+        return time;
+    }
+
+    public void setTime(String time) {
+        this.time = time;
+    }
+    
     
     public String getAuthor() {
         return author;
+    }
+
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
     }
 
     public void setAuthor(String author) {
@@ -49,13 +66,7 @@ public class PostDetails {
         this.id = id;
     }
 
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
+    
 
     public String getUrl() {
         return url;
