@@ -188,7 +188,7 @@ public class DBManager {
             PreparedStatement ps, psForChecking, psForInsert = null;
             ResultSet rs, rsForCheck = null;
             String author = postDetails.getAuthor();
-            
+
             ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
                     + " where author = ?");
             ps.setString(1, author);
@@ -219,7 +219,7 @@ public class DBManager {
             e.printStackTrace();
         }
     }
-    
+
     public void populatePostDateTable(PostDetails postDetails) {
         try {
             if (DBManager.getDBManager().getConDBConnection().isClosed()) {
@@ -228,7 +228,7 @@ public class DBManager {
             PreparedStatement ps, psForChecking, psForInsert = null;
             ResultSet rs, rsForCheck = null;
             Date postDate = postDetails.getPostdate();
-            
+
             ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
                     + " where postdate = ?");
             ps.setDate(1, (java.sql.Date) postDate);
