@@ -33,6 +33,9 @@ public class DBManager {
         TABLE_BHW_USER("bhwUser"),
         TABLE_BHW_POST("posttable"),
         TABLE_BHW_AUTHOR("postauthortable"),
+        TABLE_BHW_LIKE("postlikestable"),
+        TABLE_BHW_VIEW("postviewstable"),
+        TABLE_BHW_TAG("posttagtable"),
         TABLE_BHW_DATE("postdatetable");
 
         private String tableName = "";
@@ -251,6 +254,86 @@ public class DBManager {
                     psForInsert.execute();
                 } else {
                     System.out.println("The author has already inserted");
+                }
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public void populatePostLikesTable(PostDetails postDetails) {
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            PreparedStatement ps, psForChecking, psForInsert = null;
+            ResultSet rs, rsForCheck = null;
+            int postLikes = postDetails.getLikes();
+            
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
+                    + " where likes = ?");
+            ps.setInt(1, postLikes);
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                int postID = rs.getInt(1);
+                psForChecking = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_LIKE
+                        + " where likes = ? and postid = ?");
+                psForChecking.setInt(1, postLikes);
+                psForChecking.setInt(2, postID);
+
+                rsForCheck = psForChecking.executeQuery();
+                if (!rsForCheck.next()) {
+                    psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_LIKE
+                            + " (likes , postid)  Values"
+                            + " (?, ?);");
+                    psForInsert.setInt(1, postLikes);
+                    psForInsert.setInt(2, postID);
+                    psForInsert.execute();
+                } else {
+                    System.out.println("Likes against the Post has already inserted");
+                }
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public void populatePostViewsTable(PostDetails postDetails) {
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            PreparedStatement ps, psForChecking, psForInsert = null;
+            ResultSet rs, rsForCheck = null;
+            int postViews = postDetails.getViews();
+            
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
+                    + " where views = ?");
+            ps.setInt(1, postViews);
+            rs = ps.executeQuery();
+
+            while (rs.next()) {
+                int postID = rs.getInt(1);
+                psForChecking = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_VIEW
+                        + " where views = ? and postid = ?");
+                psForChecking.setInt(1, postViews);
+                psForChecking.setInt(2, postID);
+
+                rsForCheck = psForChecking.executeQuery();
+                if (!rsForCheck.next()) {
+                    psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_VIEW
+                            + " (views , postid)  Values"
+                            + " (?, ?);");
+                    psForInsert.setInt(1, postViews);
+                    psForInsert.setInt(2, postID);
+                    psForInsert.execute();
+                } else {
+                    System.out.println("Views against the Post has already inserted");
                 }
 
             }
