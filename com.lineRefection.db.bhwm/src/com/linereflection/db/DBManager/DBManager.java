@@ -1,14 +1,13 @@
-package com.lineReflection.db.DBManager;
+package com.linereflection.db.DBManager;
 
-import com.lineReflection.db.DBModel.PostDetails;
-import com.lineReflection.db.DBModel.User;
+import com.linereflection.db.DBModel.PostDetails;
+import com.linereflection.db.DBModel.User;
 import java.sql.Connection;
 //import com.mysql.jdbc.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -20,7 +19,7 @@ public class DBManager {
 
     private static final Log LOGGER = LogFactory.getLog(DBManager.class);
     private static Connection connection = null;
-
+    private DBController dBController = null;
     private User user = new User();
     private PostDetails postDetails = new PostDetails();
 
@@ -32,11 +31,9 @@ public class DBManager {
 
         TABLE_BHW_USER("bhwUser"),
         TABLE_BHW_POST("posttable"),
-        TABLE_BHW_AUTHOR("postauthortable"),
-        TABLE_BHW_LIKE("postlikestable"),
-        TABLE_BHW_VIEW("postviewstable"),
-        TABLE_BHW_TAG("posttagtable"),
-        TABLE_BHW_DATE("postdatetable");
+        TABLE_BHW_AUTHOR("postauthor"),
+        TABLE_BHW_TAG("posttag"),
+        TABLE_BHW_DISCUSSIONBOARD("discussionboard");
 
         private String tableName = "";
 
@@ -154,27 +151,38 @@ public class DBManager {
             }
             PreparedStatement ps, psForInsert = null;
             ResultSet rs = null;
+            int authorID, discussionBoardID;
+            String tagID = null;
+
+            authorID = populatePostAuthorTable(postDetails.getAuthor());
+            discussionBoardID = populatePostDiscussionBoardTable(postDetails.getDiscussion());
+            dBController = new DBController();
+            tagID = dBController.tagNameDivider(postDetails.getTags()).trim().replaceAll("\\s", ",").trim();
             ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
-                    + " where url = ?");
+                    + " where posturl = ?");
             ps.setString(1, postDetails.getUrl());
             rs = ps.executeQuery();
 
             if (!rs.next()) {
                 psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_POST
-                        + " (url, title, likes, replies, views, discussion, tags, author, postdate, time, userEmail)  Values"
-                        + " (?,?,?,?,?,?,?,?,?,?,?);");
-                psForInsert.setString(1, postDetails.getUrl());
-                psForInsert.setString(2, postDetails.getTitle());
-                psForInsert.setInt(3, postDetails.getLikes());
-                psForInsert.setInt(4, postDetails.getReplies());
-                psForInsert.setInt(5, postDetails.getViews());
-                psForInsert.setString(6, postDetails.getDiscussion());
-                psForInsert.setString(7, postDetails.getTags());
-                psForInsert.setString(8, postDetails.getAuthor());
+                        + " (posttitle, posturl, postauthor, posttag, postdiscussionboard, postlike, postview, postreplie, postdate, posttime, bhwUser_email, discussionboard_id, postauthor_id, posttag_id)  Values"
+                        + " (?,?,?,?,?,?,?,?,?,?,?,?,?,?);");
+                psForInsert.setString(1, postDetails.getTitle());
+                psForInsert.setString(2, postDetails.getUrl());
+                psForInsert.setString(3, postDetails.getAuthor());
+                psForInsert.setString(4, postDetails.getTags());
+                psForInsert.setString(5, postDetails.getDiscussion());
+                psForInsert.setInt(6, postDetails.getLikes());
+                psForInsert.setInt(7, postDetails.getViews());
+                psForInsert.setInt(8, postDetails.getReplies());
                 psForInsert.setDate(9, (java.sql.Date) postDetails.getPostdate());
                 psForInsert.setString(10, postDetails.getTime());
                 psForInsert.setString(11, postDetails.getUserEmail());
-                psForInsert.execute();
+                psForInsert.setInt(12, discussionBoardID);
+                psForInsert.setInt(13, authorID);
+                psForInsert.setString(14, tagID);
+                boolean result = psForInsert.execute();
+                System.out.println(result);
             } else {
                 System.out.println("The row already inserted");
             }
@@ -183,206 +191,108 @@ public class DBManager {
         }
     }
 
-    public void populatePostAuthorTable(PostDetails postDetails) {
+    public ResultSet selectSQL(TABLE tableName, String columnName, String searchValue) {
+        PreparedStatement ps = null;
+        ResultSet rs = null;
         try {
             if (DBManager.getDBManager().getConDBConnection().isClosed()) {
                 DBManager.getDBManager().getConDBConnection();
             }
-            PreparedStatement ps, psForChecking, psForInsert = null;
-            ResultSet rs, rsForCheck = null;
-            String author = postDetails.getAuthor();
-
-            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
-                    + " where author = ?");
-            ps.setString(1, author);
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + tableName
+                    + " where " + columnName + " = ?");
+            ps.setString(1, searchValue);
             rs = ps.executeQuery();
-
-            while (rs.next()) {
-                int postID = rs.getInt(1);
-                psForChecking = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_AUTHOR
-                        + " where author = ? and postid = ?");
-                psForChecking.setString(1, author);
-                psForChecking.setInt(2, postID);
-
-                rsForCheck = psForChecking.executeQuery();
-                if (!rsForCheck.next()) {
-                    psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_AUTHOR
-                            + " (author, postid)  Values"
-                            + " (?, ?);");
-                    psForInsert.setString(1, author);
-                    psForInsert.setInt(2, postID);
-                    psForInsert.execute();
-                } else {
-                    System.out.println("The author has already inserted");
-                }
-
-            }
-
-        } catch (Exception e) {
+            return rs;
+        } catch (SQLException e) {
             e.printStackTrace();
         }
+        return rs;
     }
 
-    public void populatePostDateTable(PostDetails postDetails) {
+    public boolean insertSQL(TABLE tablName, String columnName, String insertValue) {
+        boolean insertRersult = false;
         try {
-            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
-                DBManager.getDBManager().getConDBConnection();
-            }
-            PreparedStatement ps, psForChecking, psForInsert = null;
-            ResultSet rs, rsForCheck = null;
-            Date postDate = postDetails.getPostdate();
-
-            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
-                    + " where postdate = ?");
-            ps.setDate(1, (java.sql.Date) postDate);
-            rs = ps.executeQuery();
-
-            while (rs.next()) {
-                int postID = rs.getInt(1);
-                psForChecking = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_DATE
-                        + " where date = ? and postid = ?");
-                psForChecking.setDate(1, (java.sql.Date) postDate);
-                psForChecking.setInt(2, postID);
-
-                rsForCheck = psForChecking.executeQuery();
-                if (!rsForCheck.next()) {
-                    psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_DATE
-                            + " (date, postid)  Values"
-                            + " (?, ?);");
-                    psForInsert.setDate(1, (java.sql.Date) postDate);
-                    psForInsert.setInt(2, postID);
-                    psForInsert.execute();
-                } else {
-                    System.out.println("The author has already inserted");
-                }
-
-            }
-
-        } catch (Exception e) {
+            PreparedStatement ps = null;
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + tablName
+                    + " (" + columnName + ") Values (?);");
+            ps.setString(1, insertValue);
+            insertRersult = ps.execute();
+            return insertRersult;
+        } catch (SQLException e) {
             e.printStackTrace();
         }
+        return insertRersult;
     }
-    
-    public void populatePostLikesTable(PostDetails postDetails) {
+
+    public int populatePostAuthorTable(String authorName) {
+
         try {
-            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
-                DBManager.getDBManager().getConDBConnection();
-            }
-            PreparedStatement ps, psForChecking, psForInsert = null;
-            ResultSet rs, rsForCheck = null;
-            int postLikes = postDetails.getLikes();
-            
-            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
-                    + " where likes = ?");
-            ps.setInt(1, postLikes);
-            rs = ps.executeQuery();
-
-            while (rs.next()) {
-                int postID = rs.getInt(1);
-                psForChecking = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_LIKE
-                        + " where likes = ? and postid = ?");
-                psForChecking.setInt(1, postLikes);
-                psForChecking.setInt(2, postID);
-
-                rsForCheck = psForChecking.executeQuery();
-                if (!rsForCheck.next()) {
-                    psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_LIKE
-                            + " (likes , postid)  Values"
-                            + " (?, ?);");
-                    psForInsert.setInt(1, postLikes);
-                    psForInsert.setInt(2, postID);
-                    psForInsert.execute();
-                } else {
-                    System.out.println("Likes against the Post has already inserted");
+            String columnName = "authorname";
+            ResultSet rs, rsForSelect = null;
+            rs = selectSQL(TABLE.TABLE_BHW_AUTHOR, columnName, authorName);
+            if (!rs.next()) {
+                insertSQL(TABLE.TABLE_BHW_AUTHOR, columnName, authorName);
+                rsForSelect = selectSQL(TABLE.TABLE_BHW_AUTHOR, columnName, authorName);
+                if (rsForSelect.next()) {
+                    int authorID = rsForSelect.getInt(1);
+                    return authorID;
                 }
-
+            } else {
+                int authorID = rs.getInt(1);
+                return authorID;
             }
-
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
+        return 0;
     }
-    
-    public void populatePostViewsTable(PostDetails postDetails) {
+
+    public int populatePostDiscussionBoardTable(String boardName) {
+
         try {
-            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
-                DBManager.getDBManager().getConDBConnection();
-            }
-            PreparedStatement ps, psForChecking, psForInsert = null;
-            ResultSet rs, rsForCheck = null;
-            int postViews = postDetails.getViews();
-            
-            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
-                    + " where views = ?");
-            ps.setInt(1, postViews);
-            rs = ps.executeQuery();
-
-            while (rs.next()) {
-                int postID = rs.getInt(1);
-                psForChecking = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_VIEW
-                        + " where views = ? and postid = ?");
-                psForChecking.setInt(1, postViews);
-                psForChecking.setInt(2, postID);
-
-                rsForCheck = psForChecking.executeQuery();
-                if (!rsForCheck.next()) {
-                    psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_VIEW
-                            + " (views , postid)  Values"
-                            + " (?, ?);");
-                    psForInsert.setInt(1, postViews);
-                    psForInsert.setInt(2, postID);
-                    psForInsert.execute();
-                } else {
-                    System.out.println("Views against the Post has already inserted");
+            String columnName = "boardname";
+            ResultSet rs, rsForSelect = null;
+            rs = selectSQL(TABLE.TABLE_BHW_DISCUSSIONBOARD, columnName, boardName);
+            if (!rs.next()) {
+                insertSQL(TABLE.TABLE_BHW_DISCUSSIONBOARD, columnName, boardName);
+                rsForSelect = selectSQL(TABLE.TABLE_BHW_DISCUSSIONBOARD, columnName, boardName);
+                if (rsForSelect.next()) {
+                    int boardID = rsForSelect.getInt(1);
+                    return boardID;
                 }
-
+            } else {
+                int boardID = rs.getInt(1);
+                return boardID;
             }
-
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
+        return 0;
     }
 
-    public void populatePostTagTable(PostDetails postDetails) {
+    public int populatePostTagTable(String tagname) {
+
         try {
-            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
-                DBManager.getDBManager().getConDBConnection();
-            }
-            PreparedStatement ps, psForChecking, psForInsert = null;
-            ResultSet rs, rsForCheck = null;
-            String tag = postDetails.getTags();
-            
-            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
-                    + " where tags = ?");
-            ps.setString(1, tag);
-            rs = ps.executeQuery();
-
-            while (rs.next()) {
-                int postID = rs.getInt(1);
-                String tagInPostTable = rs.getString(8);
-                psForChecking = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_TAG
-                        + " where tag = ? and postid = ?");
-                psForChecking.setString(1, tagInPostTable);
-                psForChecking.setInt(2, postID);
-
-                rsForCheck = psForChecking.executeQuery();
-                if (!rsForCheck.next()) {
-                    psForInsert = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + TABLE.TABLE_BHW_TAG
-                            + " (tag, postid)  Values"
-                            + " (?, ?);");
-                    psForInsert.setString(1, tag);
-                    psForInsert.setInt(2, postID);
-                    psForInsert.execute();
-                } else {
-                    System.out.println("The Tag has already inserted");
+            String columnName = "tagname";
+            ResultSet rs, rsForSelect = null;
+            rs = selectSQL(TABLE.TABLE_BHW_TAG, columnName, tagname);
+            if (!rs.next()) {
+                insertSQL(TABLE.TABLE_BHW_TAG, columnName, tagname);
+                rsForSelect = selectSQL(TABLE.TABLE_BHW_TAG, columnName, tagname);
+                if (rsForSelect.next()) {
+                    int tagID = rsForSelect.getInt(1);
+                    return tagID;
                 }
-
+            } else {
+                int tagID = rs.getInt(1);
+                return tagID;
             }
-
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
+        return 0;
     }
+
     List<PostDetails> postDetailsList = new LinkedList<>();
 
     public List<PostDetails> search(String sString, String sTag) {
