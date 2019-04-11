@@ -10,20 +10,24 @@ package com.linereflection.db.DBManager;
  * @author Akif
  */
 public class DBController {
-    public String tagNameDivider(String tagNames){
+
+    public String tagNameDivider(String tagNames) {
         String tagIDString = " ";
+       // String tagIDTest = tagIDString.replaceFirst(",", "").trim();
+
+//        tagIDString = tagIDString.substring(1);
         String[] tagNameArray = tagNames.split(",");
-        
+
         for (String tag : tagNameArray) {
             int result = DBManager.getDBManager().populatePostTagTable(tag);
-            if(result != 0){
-                tagIDString = tagIDString + result;
-            }
-            else{
+            if (result != 0) {
+                tagIDString = tagIDString + "," + result;
+            } else {
                 tagIDString = null;
             }
         }
+       
         return tagIDString;
     }
-    
+
 }

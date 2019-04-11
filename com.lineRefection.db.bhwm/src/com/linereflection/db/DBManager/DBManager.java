@@ -157,7 +157,8 @@ public class DBManager {
             authorID = populatePostAuthorTable(postDetails.getAuthor());
             discussionBoardID = populatePostDiscussionBoardTable(postDetails.getDiscussion());
             dBController = new DBController();
-            tagID = dBController.tagNameDivider(postDetails.getTags()).trim().replaceAll("\\s", ",").trim();
+            tagID = dBController.tagNameDivider(postDetails.getTags());
+            String tagOKID = tagID.replaceFirst(",", "").trim();
             ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
                     + " where posturl = ?");
             ps.setString(1, postDetails.getUrl());
@@ -180,7 +181,7 @@ public class DBManager {
                 psForInsert.setString(11, postDetails.getUserEmail());
                 psForInsert.setInt(12, discussionBoardID);
                 psForInsert.setInt(13, authorID);
-                psForInsert.setString(14, tagID);
+                psForInsert.setString(14, tagOKID);
                 boolean result = psForInsert.execute();
                 System.out.println(result);
             } else {
@@ -198,8 +199,10 @@ public class DBManager {
             if (DBManager.getDBManager().getConDBConnection().isClosed()) {
                 DBManager.getDBManager().getConDBConnection();
             }
-            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + tableName
-                    + " where " + columnName + " = ?");
+//            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + tableName
+//                    + " where " + columnName + " = ?");
+
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + tableName + " where " + columnName + " = ? ");
             ps.setString(1, searchValue);
             rs = ps.executeQuery();
             return rs;
@@ -214,7 +217,7 @@ public class DBManager {
         try {
             PreparedStatement ps = null;
             ps = DBManager.getDBManager().getConDBConnection().prepareStatement("INSERT INTO " + tablName
-                    + " (" + columnName + ") Values (?);");
+                    + " (" + columnName + ") Values (?) ;");
             ps.setString(1, insertValue);
             insertRersult = ps.execute();
             return insertRersult;
@@ -301,34 +304,40 @@ public class DBManager {
 //        List<PostDetails> postDetailsList = new LinkedList<>();
 
         String searchString = sString;
-        ResultSet resultSet = null;
+        ResultSet resultSet, storeResultSet = null;
+        TABLE nameTable = null;
+        if (searchTag == "posttag") {
+            nameTable = TABLE.TABLE_BHW_POST;
+        } else if (searchTag == "author") {
+            nameTable = TABLE.TABLE_BHW_AUTHOR;
+        }
         try {
             if (DBManager.getDBManager().getConDBConnection().isClosed()) {
                 DBManager.getDBManager().getConDBConnection();
             }
-            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST + " where " + searchTag + " = ?");
-            ps.setString(1, searchString);
-            resultSet = ps.executeQuery();
-            while (resultSet.next()) {
-                PostDetails postDetails = new PostDetails();
-                // postDetails.setId(resultSet.getInt(1));
-                postDetails.setUrl(resultSet.getString(2));
-                postDetails.setTitle(resultSet.getString(3));
-                postDetails.setLikes(resultSet.getInt(4));
-                postDetails.setReplies(resultSet.getInt(5));
-                postDetails.setViews(resultSet.getInt(6));
-                postDetails.setDiscussion(resultSet.getString(7));
-                postDetails.setTags(resultSet.getString(8));
-                //  postDetails.setAuthor(resultSet.getString(9));
-                //  postDetails.setPostdate(resultSet.getDate(10));
-                //   postDetails.setUserId(resultSet.getInt(11));
-                postDetailsList.add(postDetails);
-//                System.out.println(postDetails.getDiscussion());
-//                System.err.println(postDetails.getPostdate());
-
-            }
+            //ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST + " where " + searchTag + " = ?");
+            resultSet = selectSQL(nameTable, searchTag, searchString);
+            System.out.println(resultSet);
+//            while (!resultSet.next()) {
+//                PostDetails postDetails = new PostDetails();
+//                // postDetails.setId(resultSet.getInt(1));
+//                postDetails.setUrl(resultSet.getString(2));
+//                postDetails.setTitle(resultSet.getString(3));
+//                postDetails.setLikes(resultSet.getInt(4));
+//                postDetails.setReplies(resultSet.getInt(5));
+//                postDetails.setViews(resultSet.getInt(6));
+//                postDetails.setDiscussion(resultSet.getString(7));
+//                postDetails.setTags(resultSet.getString(8));
+//                //  postDetails.setAuthor(resultSet.getString(9));
+//                //  postDetails.setPostdate(resultSet.getDate(10));
+//                //   postDetails.setUserId(resultSet.getInt(11));
+//                postDetailsList.add(postDetails);
+////                System.out.println(postDetails.getDiscussion());
+////                System.err.println(postDetails.getPostdate());
+//
+//            }
             resultSet.close();
-            ps.close();
+            // ps.close();
             getSearchDetails(postDetailsList);
         } catch (SQLException ex) {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
@@ -408,6 +417,63 @@ public class DBManager {
             ps.close();
             resultSet.close();
             getSearchDetails(postDetailsList);
+        } catch (SQLException ex) {
+            Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return postDetailsList;
+    }
+
+    public List<PostDetails> searchTag() {
+        PreparedStatement preparedStatementTag = null;
+        List<PostDetails> postDetailsList = new LinkedList<>();
+        ResultSet resultSet = null;
+
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            preparedStatementTag = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_TAG);
+
+            resultSet = preparedStatementTag.executeQuery();
+            while (resultSet.next()) {
+                PostDetails postDetails = new PostDetails();
+
+                postDetails.setTags(resultSet.getString(2));
+                postDetailsList.add(postDetails);
+            }
+            preparedStatementTag.close();
+            resultSet.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return postDetailsList;
+    }
+
+    public List<PostDetails> getSearchTag(List list) {
+        List<PostDetails> tagList = list;
+        return tagList;
+    }
+
+    public  List<PostDetails> searchAuthor() {
+        PreparedStatement preparedStatementTag = null;
+        List<PostDetails> postDetailsList = new LinkedList<>();
+        ResultSet resultSet = null;
+    
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            preparedStatementTag = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_AUTHOR);
+
+            resultSet = preparedStatementTag.executeQuery();
+            while (resultSet.next()) {
+                PostDetails postDetails = new PostDetails();
+
+                postDetails.setAuthor(resultSet.getString(2));
+                postDetailsList.add(postDetails);
+            }
+            preparedStatementTag.close();
+            resultSet.close();
         } catch (SQLException ex) {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
         }
