@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -295,104 +296,108 @@ public class DBManager {
         return 0;
     }
 
+    public String selectColumn(String tag) {
+        String searchTag = tag;
+        if (searchTag == "likes") {
+            searchTag = "postlike";
+        } else if (searchTag == "views") {
+            searchTag = "postview";
+        } else if (searchTag == "replies") {
+            searchTag = "postreplie";
+        }
+        return searchTag;
+    }
+
+//    public ResultSet searchQuery(int  int start) {
+//        ResultSet resultSet = null;
+//        ps = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM " + TABLE.TABLE_BHW_POST + " WHERE " + searchTag + " between " + startValue + " and " + endValue);
+//        resultSet = ps.executeQuery();
+//        return resultSet;
+//    }
+    public ResultSet searchQuery(TABLE tableName, String columnName, int start, int end) {
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + tableName
+                    + " where " + columnName + " between " + start + " and " + end);
+
+            rs = ps.executeQuery();
+            return rs;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return rs;
+    }
+
     List<PostDetails> postDetailsList = new LinkedList<>();
 
-//    public List<PostDetails> search(String sTag, String sString) {
-//
-//        //String searchTag = "postdiscussionboard";
-//        String searchTag = sTag;
-//        String searchString = sString;   
-//        String neww = searchString.trim();
-//        PreparedStatement ps = null;
-//        ResultSet resultSet, storeResultSet = null;
-//        TABLE nameTable;
-//        String start = "";
-//        String end = "";
-//        if (searchTag == "Likes") {
-//            nameTable = TABLE.TABLE_BHW_POST;
-//            searchTag = "postlike";
-//            
-//        } else if (searchTag == "author") {
-//            nameTable = TABLE.TABLE_BHW_AUTHOR;
-//
-//        }
-//        try {
-//            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
-//                DBManager.getDBManager().getConDBConnection();
-//            }
-//            //  ps = DBManager.getDBManager().getConDBConnection().prepareStatement();
-//            //resultSet = selectSQL(TABLE.TABLE_BHW_POST, searchTag, searchString);
-//
-//            if (searchTag.equals("0-49")) {
-//                start = "0";
-//                end = "49";
-//            } 
-//            if (searchTag.equals("50-99")) {
-//                start = "50";
-//                end = "99";
-//            } 
-//            
-//            if (searchTag.equals("100-149")) {
-//                start = "100";
-//                end = "149";
-//            }
-//
-//            int suru = Integer.parseInt(start);
-//            int ses = Integer.parseInt(end);
-//            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM posttable WHERE "+ searchTag+ "between " + suru + "  and " + ses);
-//
-////           ps.setString(1, neww);
-//            resultSet = ps.executeQuery();
-//            while (resultSet.next()) {
-//                PostDetails postDetails = new PostDetails();
-//                //postDetails.setId(resultSet.getInt(1));
-//                postDetails.setTitle(resultSet.getString(2));
-//                postDetails.setUrl(resultSet.getString(3));
-//                postDetails.setTags(resultSet.getString(5));
-//                postDetails.setLikes(resultSet.getInt(7));
-//                postDetails.setViews(resultSet.getInt(8));
-//                postDetails.setReplies(resultSet.getInt(9));
-//
-//                postDetails.setDiscussion(resultSet.getString(6));
-//                //  postDetails.setAuthor(resultSet.getString(9));
-//                //  postDetails.setPostdate(resultSet.getDate(10));
-//                //   postDetails.setUserId(resultSet.getInt(11));
-//                postDetailsList.add(postDetails);
-//
-//            }
-//            resultSet.close();
-//            // ps.close();
-//            getSearchDetails(postDetailsList);
-//        } catch (SQLException ex) {
-//            Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        return postDetailsList;
-//    }
-    
-     public List<PostDetails> search(String sTag, String sString) {
+    public List<PostDetails> searchByNumber(String tag, int start, int end) {
+        String searchTag = tag;
+        int startValue = start;
+        int endValue = end;
+        PreparedStatement ps = null;
+        ResultSet resultSet, storeResultSet = null;
+        searchTag = selectColumn(searchTag);
+
+        try {
+            resultSet = searchQuery(TABLE.TABLE_BHW_POST, searchTag, start, end);
+
+            while (resultSet.next()) {
+                PostDetails postDetails = new PostDetails();
+                //postDetails.setId(resultSet.getInt(1));
+                postDetails.setTitle(resultSet.getString(2));
+                postDetails.setUrl(resultSet.getString(3));
+                postDetails.setTags(resultSet.getString(5));
+                postDetails.setLikes(resultSet.getInt(7));
+                postDetails.setViews(resultSet.getInt(8));
+                postDetails.setReplies(resultSet.getInt(9));
+
+                postDetails.setDiscussion(resultSet.getString(6));
+                //  postDetails.setAuthor(resultSet.getString(9));
+                //  postDetails.setPostdate(resultSet.getDate(10));
+                //   postDetails.setUserId(resultSet.getInt(11));
+                postDetailsList.add(postDetails);
+
+            }
+            resultSet.close();
+            // ps.close();
+            getSearchDetails(postDetailsList);
+
+        } catch (SQLException ex) {
+            Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return postDetailsList;
+
+    }
+
+    public List<PostDetails> search(String sTag, String sString) {
 
         //String searchTag = "postdiscussionboard";
         String searchTag = sTag;
-        String searchString = sString;   
-        String neww = searchString.trim();
+        String searchString = sString;
+        String newSeachValue = searchString.trim();
+        newSeachValue.split(",");
         PreparedStatement ps = null;
         ResultSet resultSet, storeResultSet = null;
-      
+
         if (searchTag == "Tags") {
-            
-            searchTag = "postdiscussionboard";
-            
+
+            searchTag = "posttag";
+
         } else if (searchTag == "author") {
-            searchTag= "postauthor";
+            searchTag = "postauthor";
         }
         try {
             if (DBManager.getDBManager().getConDBConnection().isClosed()) {
                 DBManager.getDBManager().getConDBConnection();
             }
-            
+
             ps = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM " + TABLE.TABLE_BHW_POST + " WHERE " + searchTag + " = ? ");
 
-           ps.setString(1, neww);
+            ps.setString(1, newSeachValue);
             resultSet = ps.executeQuery();
             while (resultSet.next()) {
                 PostDetails postDetails = new PostDetails();
@@ -420,45 +425,44 @@ public class DBManager {
         return postDetailsList;
     }
 
-//    public List<PostDetails> search(int sString, String sTag) {
-//        PreparedStatement ps = null;
-//        String searchTag = sTag;
-////        List<PostDetails> postDetailsList = new LinkedList<>();
-//
-//        int searchString = sString;
-//        ResultSet resultSet = null;
-//        try {
-//            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
-//                DBManager.getDBManager().getConDBConnection();
-//            }
-//            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST + " where " + searchTag + " = ? ");
-//            //   ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST + " where " + searchTag + " >= ? order by " + searchTag +" ASC");
-//            //    ps.setString(1, searchTag);
-//            ps.setInt(1, searchString);
-//            resultSet = ps.executeQuery();
-//            while (resultSet.next()) {
-//                PostDetails postDetails = new PostDetails();
-//                // postDetails.setId(resultSet.getInt(1));
-//                postDetails.setUrl(resultSet.getString(2));
-//                postDetails.setTitle(resultSet.getString(3));
-//                postDetails.setLikes(resultSet.getInt(4));
-//                postDetails.setReplies(resultSet.getInt(5));
-//                postDetails.setViews(resultSet.getInt(6));
-//                postDetails.setDiscussion(resultSet.getString(7));
-//                postDetails.setTags(resultSet.getString(8));
-//                //  postDetails.setAuthor(resultSet.getString(9));
-//                //  postDetails.setPostdate(resultSet.getDate(10));
-//                //   postDetails.setUserId(resultSet.getInt(11));
-//            //    postDetailsList.add(postDetails);
-//            }
-//            ps.close();
-//            resultSet.close();
-//            getSearchDetails(postDetailsList);
-//        } catch (SQLException ex) {
-//            Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//        return postDetailsList;
-//    }
+    public void searchByDate(String tag, String start, String end) {
+        String column = "postdate";
+
+        PreparedStatement ps = null;
+        ResultSet resultSet = null;
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
+                    + " where " + column + " between " + start + " and " + end);
+
+            resultSet = ps.executeQuery();
+
+            while (resultSet.next()) {
+                PostDetails postDetails = new PostDetails();
+                //postDetails.setId(resultSet.getInt(1));
+                postDetails.setTitle(resultSet.getString(2));
+                postDetails.setUrl(resultSet.getString(3));
+                postDetails.setTags(resultSet.getString(5));
+                postDetails.setLikes(resultSet.getInt(7));
+                postDetails.setViews(resultSet.getInt(8));
+                postDetails.setReplies(resultSet.getInt(9));
+
+                postDetails.setDiscussion(resultSet.getString(6));
+                //  postDetails.setAuthor(resultSet.getString(9));
+                //  postDetails.setPostdate(resultSet.getDate(10));
+                //   postDetails.setUserId(resultSet.getInt(11));
+                postDetailsList.add(postDetails);
+                System.out.println("hi");
+
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public void getSearchDetails(List list) {
 //        search(List list);
     }
