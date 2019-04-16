@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -332,6 +333,23 @@ public class DBManager {
         return rs;
     }
 
+    public ResultSet searchTag(TABLE tableName, String columnName, String tagName) {
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            if (DBManager.getDBManager().getConDBConnection().isClosed()) {
+                DBManager.getDBManager().getConDBConnection();
+            }
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM " + tableName + " where FIND_IN_SET(?," + columnName + ")");
+            ps.setString(1, tagName);
+            rs = ps.executeQuery();
+            return rs;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return rs;
+    }
+
     List<PostDetails> postDetailsList = new LinkedList<>();
 
     public List<PostDetails> searchByNumber(String tag, int start, int end) {
@@ -341,6 +359,7 @@ public class DBManager {
         PreparedStatement ps = null;
         ResultSet resultSet, storeResultSet = null;
         searchTag = selectColumn(searchTag);
+        postDetailsList.clear();
 
         try {
             resultSet = searchQuery(TABLE.TABLE_BHW_POST, searchTag, start, end);
@@ -373,32 +392,33 @@ public class DBManager {
 
     }
 
-    public List<PostDetails> search(String sTag, String sString) {
+    public List<PostDetails> searchTagAndAuthor(String sTag, String sString) {
 
         //String searchTag = "postdiscussionboard";
         String searchTag = sTag;
         String searchString = sString;
         String newSeachValue = searchString.trim();
-        newSeachValue.split(",");
+        postDetailsList.clear();
         PreparedStatement ps = null;
-        ResultSet resultSet, storeResultSet = null;
+        ResultSet resultSet = null, storeResultSet = null;
 
         if (searchTag == "Tags") {
-
             searchTag = "posttag";
+            resultSet = searchTag(TABLE.TABLE_BHW_POST, searchTag, newSeachValue);
 
         } else if (searchTag == "author") {
             searchTag = "postauthor";
+            resultSet = selectSQL(TABLE.TABLE_BHW_POST, searchTag, newSeachValue);
         }
         try {
             if (DBManager.getDBManager().getConDBConnection().isClosed()) {
                 DBManager.getDBManager().getConDBConnection();
             }
 
-            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM " + TABLE.TABLE_BHW_POST + " WHERE " + searchTag + " = ? ");
-
-            ps.setString(1, newSeachValue);
-            resultSet = ps.executeQuery();
+            //    ps = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM " + TABLE.TABLE_BHW_POST + " WHERE " + searchTag + " = ? ");
+            //   ps = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM posttable where FIND_IN_SET(?,posttag)");
+            //   ps.setString(1, newSeachValue);
+            //   resultSet = ps.executeQuery();
             while (resultSet.next()) {
                 PostDetails postDetails = new PostDetails();
                 //postDetails.setId(resultSet.getInt(1));
@@ -427,6 +447,12 @@ public class DBManager {
 
     public void searchByDate(String tag, String start, String end) {
         String column = "postdate";
+        LocalDate datexz = null;
+        LocalDate date = LocalDate.parse(start);
+        LocalDate date2 = LocalDate.parse(end);
+
+        System.out.println(date);
+        System.out.println(date2);
 
         PreparedStatement ps = null;
         ResultSet resultSet = null;
@@ -434,9 +460,14 @@ public class DBManager {
             if (DBManager.getDBManager().getConDBConnection().isClosed()) {
                 DBManager.getDBManager().getConDBConnection();
             }
-            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
-                    + " where " + column + " between " + start + " and " + end);
+//            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
+//                    + " where  postdate between " + date.isBefore(date2) + " and " + date2.isAfter(date));
 
+            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
+                    + " where  postdate = " + date.isBefore(date2));
+
+//            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
+//                    + " where " + column + " date_format(" + date + ", '%Y-%m-%d') ");
             resultSet = ps.executeQuery();
 
             while (resultSet.next()) {
@@ -464,7 +495,7 @@ public class DBManager {
     }
 
     public void getSearchDetails(List list) {
-//        search(List list);
+//        searchTagAndAuthor(List list);
     }
 
     public List<PostDetails> displayTable() {
