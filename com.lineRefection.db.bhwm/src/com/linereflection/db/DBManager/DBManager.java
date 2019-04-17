@@ -377,8 +377,6 @@ public class DBManager {
             }
             resultSet.close();
             // ps.close();
-            getSearchDetails(postDetailsList);
-
         } catch (SQLException ex) {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -387,8 +385,6 @@ public class DBManager {
     }
 
     public List<PostDetails> searchTagAndAuthor(String sTag, String sString) {
-
-        //String searchTag = "postdiscussionboard";
         String searchTag = sTag;
         String searchString = sString;
         String newSeachValue = searchString.trim();
@@ -417,15 +413,10 @@ public class DBManager {
                 postDetails.setLikes(resultSet.getInt(7));
                 postDetails.setViews(resultSet.getInt(8));
                 postDetails.setReplies(resultSet.getInt(9));
-
-                postDetails.setDiscussion(resultSet.getString(6));
-             
+                postDetails.setDiscussion(resultSet.getString(6));             
                 postDetailsList.add(postDetails);
-
             }
             resultSet.close();
-            // ps.close();
-            getSearchDetails(postDetailsList);
         } catch (SQLException ex) {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -436,7 +427,6 @@ public class DBManager {
         String column = "postdate";
         LocalDate startDate = LocalDate.parse(start);
         LocalDate endDate = LocalDate.parse(end);
-
         postDetailsList.clear();
 
         PreparedStatement ps = null;
@@ -461,17 +451,10 @@ public class DBManager {
                 postDetails.setReplies(resultSet.getInt(9));
                 postDetails.setDiscussion(resultSet.getString(6));
                 postDetailsList.add(postDetails);
-                System.out.println("hi");
-
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    public void getSearchDetails(List list) {
-//        searchTagAndAuthor(List list);
     }
 
     public List<PostDetails> displayTable() {
@@ -496,12 +479,9 @@ public class DBManager {
                 postDetails.setAuthor(resultSet.getString(9));
 
                 postDetailsList.add(postDetails);
-
-                // System.out.println(postDetails.getAuthor());
             }
             ps.close();
             resultSet.close();
-            getSearchDetails(postDetailsList);
         } catch (SQLException ex) {
             Logger.getLogger(DBManager.class.getName()).log(Level.SEVERE, null, ex);
         }
