@@ -309,12 +309,6 @@ public class DBManager {
         return searchTag;
     }
 
-//    public ResultSet searchQuery(int  int start) {
-//        ResultSet resultSet = null;
-//        ps = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM " + TABLE.TABLE_BHW_POST + " WHERE " + searchTag + " between " + startValue + " and " + endValue);
-//        resultSet = ps.executeQuery();
-//        return resultSet;
-//    }
     public ResultSet searchQuery(TABLE tableName, String columnName, int start, int end) {
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -414,11 +408,6 @@ public class DBManager {
             if (DBManager.getDBManager().getConDBConnection().isClosed()) {
                 DBManager.getDBManager().getConDBConnection();
             }
-
-            //    ps = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM " + TABLE.TABLE_BHW_POST + " WHERE " + searchTag + " = ? ");
-            //   ps = DBManager.getDBManager().getConDBConnection().prepareStatement("SELECT * FROM posttable where FIND_IN_SET(?,posttag)");
-            //   ps.setString(1, newSeachValue);
-            //   resultSet = ps.executeQuery();
             while (resultSet.next()) {
                 PostDetails postDetails = new PostDetails();
                 //postDetails.setId(resultSet.getInt(1));
@@ -430,9 +419,7 @@ public class DBManager {
                 postDetails.setReplies(resultSet.getInt(9));
 
                 postDetails.setDiscussion(resultSet.getString(6));
-                //  postDetails.setAuthor(resultSet.getString(9));
-                //  postDetails.setPostdate(resultSet.getDate(10));
-                //   postDetails.setUserId(resultSet.getInt(11));
+             
                 postDetailsList.add(postDetails);
 
             }
@@ -447,12 +434,10 @@ public class DBManager {
 
     public void searchByDate(String tag, String start, String end) {
         String column = "postdate";
-        LocalDate datexz = null;
-        LocalDate date = LocalDate.parse(start);
-        LocalDate date2 = LocalDate.parse(end);
+        LocalDate startDate = LocalDate.parse(start);
+        LocalDate endDate = LocalDate.parse(end);
 
-        System.out.println(date);
-        System.out.println(date2);
+        postDetailsList.clear();
 
         PreparedStatement ps = null;
         ResultSet resultSet = null;
@@ -460,30 +445,21 @@ public class DBManager {
             if (DBManager.getDBManager().getConDBConnection().isClosed()) {
                 DBManager.getDBManager().getConDBConnection();
             }
-//            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
-//                    + " where  postdate between " + date.isBefore(date2) + " and " + date2.isAfter(date));
-
             ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
-                    + " where  postdate = " + date.isBefore(date2));
+                    + " where  " + column + " between '" + startDate + "' and '" + endDate + "'");
 
-//            ps = DBManager.getDBManager().getConDBConnection().prepareStatement("select * from " + TABLE.TABLE_BHW_POST
-//                    + " where " + column + " date_format(" + date + ", '%Y-%m-%d') ");
             resultSet = ps.executeQuery();
 
             while (resultSet.next()) {
                 PostDetails postDetails = new PostDetails();
-                //postDetails.setId(resultSet.getInt(1));
+              
                 postDetails.setTitle(resultSet.getString(2));
                 postDetails.setUrl(resultSet.getString(3));
                 postDetails.setTags(resultSet.getString(5));
                 postDetails.setLikes(resultSet.getInt(7));
                 postDetails.setViews(resultSet.getInt(8));
                 postDetails.setReplies(resultSet.getInt(9));
-
                 postDetails.setDiscussion(resultSet.getString(6));
-                //  postDetails.setAuthor(resultSet.getString(9));
-                //  postDetails.setPostdate(resultSet.getDate(10));
-                //   postDetails.setUserId(resultSet.getInt(11));
                 postDetailsList.add(postDetails);
                 System.out.println("hi");
 
